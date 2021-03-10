@@ -28,4 +28,5 @@ http://0.0.0.0:8080/
 http://0.0.0.0:15672/
 
 login: student
+
 password: qwerty
