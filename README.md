@@ -26,3 +26,6 @@ http://0.0.0.0:8080/
 
 ### RabbitMq доступен по адресу
 http://0.0.0.0:15672/
+
+login: student
+password: qwerty
