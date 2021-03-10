@@ -8,10 +8,17 @@
 ```docker-compose up api```
 
 ### посмотреть логи
-```docker-compose logs```
+```docker-compose logs -f```
 
 ### посмотреть логи конкретного сервиса
 ```docker-compose logs api```
+
+
+### остановить это всё
+```docker-compose stop -t 1```
+
+### удалить созданные образы
+```docker-compose rm -f```
 
 
 ### Сервис доступен по адресу 
