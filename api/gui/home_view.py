@@ -77,6 +77,7 @@ async def send_rmq_direct(request):
 
 
 async def update_task_status_api(request):
+    print("[update_task_status_api]")
     post_data = await request.json()
     task_num = post_data.get('task_num')
     task_status = post_data.get('task_status')
