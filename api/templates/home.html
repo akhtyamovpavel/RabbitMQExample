@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <title>
+            Lecture 3. Service interaction
+        </title>
+        <style type="text/css">
+            .wrapper {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr;
+                }
+            .box1 {
+                display: grid;
+                }
+            .box1 div {
+                padding: 10px;
+                }
+        </style>
+    </head>
+
+    <body>
+        <div class="wrapper">
+            <div>
+                <h3>
+                    <a href="{{ url('home') }}">Межсервисные взаимодействия</a>
+                </h3>
+                <div class="box1">
+                    <div>
+                        <h4>Синхронное</h4>
+                        <form method="GET" action="{{ url('get_sync_data') }}">
+                            Получить запись по ID: <input type="number" name="data_id" />
+                            <input type="submit" value="Получить">
+                        </form>
+                        {% if get_sync_result %}
+                            <div>
+                                Найдено {{ get_sync_result.title }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <h4>Синхронное с долгим ответом</h4>
+                        <form method="GET" action="{{ url('get_sync_long_data') }}">
+                            Получить запись по ID: <input type="number" name="data_id" />
+                            <input type="submit" value="Получить">
+                        </form>
+                        {% if get_sync_long_data %}
+                            <div>
+                                Найдено {{ get_sync_long_data.title }}
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <h4>Асинхронное</h4>
+                        <form method="POST" action="{{ url('send_rmq_direct') }}">
+                            Время выполнения (сек): <input type="number" name="processing_timeout" placeholder="1"/>
+                            <br>
+                            Routing key: <input type="text" name="routing_key" value="direct_out"/>
+                            <br>
+                            <input type="submit" value="Отправить">
+                        </form>
+                        {% if rmq_direct_id %}
+                            <div>
+                                Задача {{ rmq_direct_id }} отправлена на выполнение
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h3>Данные</h3>
+                <table>
+                    <style>
+                      table, th, td {
+                        padding: 10px;
+                        border: 1px solid black;
+                        border-collapse: collapse;
+                      }
+                    </style>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Название</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for i in data %}
+                        <tr>
+                            <td>{{ i.id }}</td>
+                            <td>{{ i.title }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div>
+                <h3>Задачи</h3>
+                <table>
+                    <style>
+                      table, th, td {
+                        padding: 10px;
+                        border: 1px solid black;
+                        border-collapse: collapse;
+                      }
+                    </style>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>routing key</th>
+                            <th>timeout</th>
+                            <th>status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for i in tasks %}
+                        <tr>
+                            <td>{{ i.task_num }}</td>
+                            <td>{{ i.routing_key }}</td>
+                            <td>{{ i.timeout }}</td>
+                            <td>{{ i.task_status }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+
+
+    </body>
+</html>
