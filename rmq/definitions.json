@@ -19,15 +19,5 @@
       "write": ".*",
       "read": ".*"
     }
-  ],
-  "exchanges": [
-    {
-      "name": "to_direct",
-      "vhost": "/",
-      "durable": true,
-      "auto_delete": false,
-      "type": "direct",
-      "arguments": {}
-    }
   ]
 }

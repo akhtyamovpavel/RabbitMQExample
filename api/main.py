@@ -2,11 +2,22 @@ import logging
 from aiohttp import web
 import aiohttp_jinja2
 import jinja2
+import pika
+import os
 
 from gui.home_view import home_view, get_sync_data, get_sync_long_data, send_rmq_direct, update_task_status_api
 
 
+RMQ_URL = os.environ.get('RMQ_URL')
+
+
 logger = logging.getLogger(__name__)
+
+
+def init_rmq():
+    with pika.BlockingConnection(pika.URLParameters(RMQ_URL)) as connection:
+        with connection.channel() as channel:
+            channel.exchange_declare(exchange='to_direct', exchange_type="fanout", durable=True)
 
 
 if __name__ == '__main__':
@@ -21,6 +32,8 @@ if __name__ == '__main__':
     ])
 
     aiohttp_jinja2.setup(app, loader=jinja2.FileSystemLoader('./api/templates'))
+
+    init_rmq()
 
     web.run_app(app, host='0.0.0.0')
 

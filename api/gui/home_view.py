@@ -10,7 +10,7 @@ import logging
 
 
 RMQ_URL = os.environ.get('RMQ_URL')
-MAX_TASKS_DISPLAY = 15
+MAX_TASKS_DISPLAY = 20
 
 
 DATA = [
@@ -65,11 +65,16 @@ async def send_rmq_direct(request):
     post_data = await request.post()
     processing_timeout = post_data.get('processing_timeout', '1') or '1'
     routing_key = post_data.get('routing_key', '')
+    worker_id = post_data.get('worker_id', 'Unknown')
     task_num = increase_last_task_num()
 
     with pika.BlockingConnection(pika.URLParameters(RMQ_URL)) as connection:
         with connection.channel() as channel:
-            data = {'timeout': processing_timeout, 'task_num': task_num, 'routing_key': routing_key, 'task_status': 'PENDING'}
+            data = {'timeout': processing_timeout,
+                    'task_num': task_num,
+                    'routing_key': routing_key,
+                    'task_status': 'PENDING',
+                    'worker_id': worker_id}
             channel.basic_publish(exchange='to_direct', routing_key=routing_key, body=json.dumps(data).encode())
             TASKS[task_num] = data
 
@@ -81,10 +86,12 @@ async def update_task_status_api(request):
     post_data = await request.json()
     task_num = post_data.get('task_num')
     task_status = post_data.get('task_status')
+    worker_id = post_data.get('worker_id', 'Unknown')
 
     task = TASKS.get(task_num)
     if task:
         task['task_status'] = task_status
+        task['worker_id'] = worker_id
         return web.json_response(data={'result': 'ok'})
 
     return web.json_response(data={'result': 'not found'}, status=404)
