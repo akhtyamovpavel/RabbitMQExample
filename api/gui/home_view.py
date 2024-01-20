@@ -33,12 +33,12 @@ def _get_last_tasks():
 
 
 @aiohttp_jinja2.template('home.html')
-def home_view(request):
+async def home_view(request):
     return {'data': DATA, 'tasks': _get_last_tasks()}
 
 
 @aiohttp_jinja2.template('home.html')
-def get_sync_data(request):
+async def get_sync_data(request):
     print("[get_sync_data]")
     data_id = request.rel_url.query.get('data_id')
     res = None
@@ -48,7 +48,7 @@ def get_sync_data(request):
 
 
 @aiohttp_jinja2.template('home.html')
-def get_sync_long_data(request):
+async def get_sync_long_data(request):
     print("[get_sync_long_data]")
     # эта функция сделана специально синхронной, что бы показать работу простого однопоточного сервиса
     data_id = request.rel_url.query.get('data_id')
