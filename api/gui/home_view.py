@@ -3,6 +3,7 @@ import aiohttp_jinja2
 import time
 import pika
 from aiohttp import web
+import asyncio
 import json
 from collections import OrderedDict
 
@@ -55,7 +56,8 @@ async def get_sync_long_data(request):
     res = None
     if data_id:
         res = [i for i in DATA if i['id'] == int(data_id)]
-    time.sleep(7)
+    await asyncio.sleep(7)
+
     return {'data': DATA, 'tasks': _get_last_tasks(), 'get_sync_long_data': res[0] if res else res}
 
 

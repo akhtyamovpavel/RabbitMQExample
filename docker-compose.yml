@@ -3,7 +3,6 @@ version: "3.3"
 services:
   rmq:
     build: ./rmq
-    network_mode: bridge
     ports:
       - 15672:15672
       - 5672:5672
@@ -14,21 +13,15 @@ services:
       - 8080:8080
     depends_on:
       - rmq
-    links:
-      - rmq
     environment:
       - RMQ_URL=amqp://student:qwerty@rmq:5672/
     restart: always
     entrypoint: python3 -u api/main.py
-    network_mode: bridge
 
   consumer:
     build: .
     depends_on:
       - rmq
-    links:
-      - rmq
-      - api
     environment:
       - RMQ_URL=amqp://student:qwerty@rmq:5672/
       - API_URL=http://api:8080/update_task_status_api/
@@ -37,4 +30,3 @@ services:
 
     restart: always
     entrypoint: python3 -u consumer/main.py
-    network_mode: bridge
