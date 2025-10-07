@@ -77,7 +77,11 @@ async def send_rmq_direct(request):
                     'routing_key': routing_key,
                     'task_status': 'PENDING',
                     'worker_id': worker_id}
-            channel.basic_publish(exchange='to_direct', routing_key=routing_key, body=json.dumps(data).encode())
+            channel.basic_publish(
+                exchange='to_direct',
+                routing_key=routing_key,
+                body=json.dumps(data).encode(),
+            )
             TASKS[task_num] = data
 
     return {'data': DATA, 'tasks': _get_last_tasks(), 'rmq_direct_id': task_num}

@@ -27,7 +27,7 @@ def main():
     channel.queue_bind(queue=QUEUE_NAME, exchange=EXCHANGE_NAME, routing_key='direct_out')
     channel.basic_qos(prefetch_count=PREFETCH_COUNT)
 
-    def callback(ch, method, properties, body):
+    def callback(channel, method, properties, body):
         print(f">>> start processing message {body}")
         task_num = 0
         try:
@@ -35,15 +35,18 @@ def main():
             task_num = data.get('task_num')
             requests.post(API_URL, json={'task_num': task_num, 'task_status': 'IN_PROGRESS', 'worker_id': worker_id})
             time.sleep(int(data.get('timeout', 0)))
-            ch.basic_ack(delivery_tag=method.delivery_tag)
+            channel.basic_ack(delivery_tag=method.delivery_tag)
             requests.post(API_URL, json={'task_num': task_num, 'task_status': 'DONE', 'worker_id': worker_id})
             print(f"<<< end processing message {body}")
         except Exception as ex:
             print(f"Error occurred: {ex}")
-            ch.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
+            channel.basic_reject(delivery_tag=method.delivery_tag, requeue=False)
             requests.post(API_URL, json={'task_num': task_num, 'task_status': 'ERROR'})
 
-    channel.basic_consume(queue=QUEUE_NAME, on_message_callback=callback, auto_ack=False, consumer_tag=worker_id)
+    channel.basic_consume(
+        queue=QUEUE_NAME,
+        on_message_callback=callback,
+        auto_ack=False, consumer_tag=worker_id)
     channel.start_consuming()
 
 
