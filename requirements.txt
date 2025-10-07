@@ -2,3 +2,6 @@ aiohttp
 aiohttp_jinja2
 pika
 requests
+celery
+redis
+flower

@@ -1,18 +1,17 @@
 import os
+
 import aiohttp_jinja2
 import time
 import pika
 from aiohttp import web
-import asyncio
 import json
 from collections import OrderedDict
 
-import logging
-
+# Импортируем Celery приложение и задачи
+from celery_tasks import process_task, process_data
 
 RMQ_URL = os.environ.get('RMQ_URL')
 MAX_TASKS_DISPLAY = 20
-
 
 DATA = [
     {'id': 10, 'title': 'Тарелка'},
@@ -25,7 +24,6 @@ DATA = [
 ]
 
 TASKS = OrderedDict()
-
 LAST_TASK_NUM = 0
 
 
@@ -40,6 +38,7 @@ async def home_view(request):
 
 @aiohttp_jinja2.template('home.html')
 async def get_sync_data(request):
+    """Синхронное получение данных по ID"""
     print("[get_sync_data]")
     data_id = request.rel_url.query.get('data_id')
     res = None
@@ -56,13 +55,39 @@ async def get_sync_long_data(request):
     res = None
     if data_id:
         res = [i for i in DATA if i['id'] == int(data_id)]
-    await asyncio.sleep(7)
+    time.sleep(7)
 
     return {'data': DATA, 'tasks': _get_last_tasks(), 'get_sync_long_data': res[0] if res else res}
+
+@aiohttp_jinja2.template('home.html')
+async def send_celery_task(request):
+    """Отправка задачи в Celery"""
+    print("[send_celery_task]")
+    post_data = await request.post()
+    processing_timeout = post_data.get('processing_timeout', '1') or '1'
+    task_num = increase_last_task_num()
+
+    # Создаём запись о задаче
+    task_data = {
+        'timeout': processing_timeout,
+        'task_num': task_num,
+        'task_status': 'PENDING',
+        'worker_id': 'celery',
+        'method': 'Celery'
+    }
+    TASKS[task_num] = task_data
+
+    # Отправляем задачу в Celery
+    celery_task = process_task.delay(task_num, processing_timeout, 'celery')
+    
+    print(f"Задача {task_num} отправлена в Celery (ID: {celery_task.id})")
+    
+    return {'data': DATA, 'tasks': _get_last_tasks(), 'celery_task_id': task_num, 'celery_id': celery_task.id}
 
 
 @aiohttp_jinja2.template('home.html')
 async def send_rmq_direct(request):
+    """Отправка задачи в RabbitMQ напрямую (старый способ для сравнения)"""
     print("[send_rmq_direct]")
     post_data = await request.post()
     processing_timeout = post_data.get('processing_timeout', '1') or '1'
@@ -88,6 +113,7 @@ async def send_rmq_direct(request):
 
 
 async def update_task_status_api(request):
+    """API для обновления статуса задачи"""
     print("[update_task_status_api]")
     post_data = await request.json()
     task_num = post_data.get('task_num')

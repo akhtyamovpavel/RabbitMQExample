@@ -30,3 +30,15 @@ services:
 
     restart: always
     entrypoint: python3 -u consumer/main.py
+
+  celery_worker:
+    build: .
+    depends_on:
+      - rmq
+      - api
+    environment:
+      - RMQ_URL=amqp://student:qwerty@rmq:5672/
+      - API_URL=http://api:8080/update_task_status_api/
+    restart: always
+    working_dir: /code/api
+    entrypoint: celery -A celery_app worker --loglevel=info --concurrency=3

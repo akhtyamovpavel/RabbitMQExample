@@ -5,7 +5,7 @@ import jinja2
 import pika
 import os
 
-from gui.home_view import home_view, get_sync_data, get_sync_long_data, send_rmq_direct, update_task_status_api
+from gui.home_view import home_view, get_sync_data, get_sync_long_data, send_celery_task, send_rmq_direct, update_task_status_api
 
 
 RMQ_URL = os.environ.get('RMQ_URL')
@@ -27,6 +27,7 @@ if __name__ == '__main__':
         web.get('/', home_view, name='home'),
         web.get('/get_sync_data/', get_sync_data, name='get_sync_data'),
         web.get('/get_sync_long_data/', get_sync_long_data, name='get_sync_long_data'),
+        web.post('/send_celery_task/', send_celery_task, name='send_celery_task'),
         web.post('/send_rmq_direct/', send_rmq_direct, name='send_rmq_direct'),
         web.post('/update_task_status_api/', update_task_status_api, name='update_task_status_api'),
     ])

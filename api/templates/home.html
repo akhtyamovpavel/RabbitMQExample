@@ -1,137 +1,347 @@
 <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <title>
-            Lecture 3. Service interaction
-        </title>
-        <style type="text/css">
-            .wrapper {
-                display: grid;
-                grid-template-columns: 2fr 1fr 1fr;
-                }
-            .box1 {
-                display: grid;
-                }
-            .box1 div {
-                padding: 10px;
-                }
-        </style>
-    </head>
-
-    <body>
-        <div class="wrapper">
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Межсервисное взаимодействие с Celery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .method-section {
+            background: white;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .method-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+        
+        .celery-method {
+            border-left-color: #10b981;
+        }
+        
+        .celery-method h3 {
+            color: #10b981;
+        }
+        
+        .rmq-method {
+            border-left-color: #f59e0b;
+        }
+        
+        .rmq-method h3 {
+            color: #f59e0b;
+        }
+        
+        form {
+            margin-top: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        input[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        input[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .celery-method input[type="submit"] {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+        
+        .rmq-method input[type="submit"] {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 12px;
+            background: #e8f5e9;
+            border-radius: 5px;
+            color: #2e7d32;
+            font-weight: 500;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        tbody tr:hover {
+            background: #f5f5f5;
+        }
+        
+        .status-PENDING {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        
+        .status-IN_PROGRESS {
+            color: #3b82f6;
+            font-weight: bold;
+        }
+        
+        .status-DONE {
+            color: #10b981;
+            font-weight: bold;
+        }
+        
+        .status-ERROR {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        
+        .data-table {
+            margin-top: 20px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-celery {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .badge-rmq {
+            background: #fef3c7;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Межсервисное взаимодействие с Celery и RabbitMQ</h1>
+        
+        <div class="grid">
             <div>
-                <h3>
-                    <a href="{{ url('home') }}">Межсервисные взаимодействия</a>
-                </h3>
-                <div class="box1">
-                    <div>
-                        <h4>Синхронное</h4>
-                        <form method="GET" action="{{ url('get_sync_data') }}">
-                            Получить запись по ID: <input type="number" name="data_id" />
-                            <input type="submit" value="Получить">
+                <div class="card">
+                    <h2>Методы отправки задач</h2>
+                    
+                    <div class="method-section celery-method">
+                        <h3>✨ Celery (Рекомендуется)</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Используйте Celery для удобной работы с задачами</p>
+                        <form method="POST" action="{{ url('send_celery_task') }}">
+                            <label>Время выполнения (секунд):</label>
+                            <input type="number" name="processing_timeout" placeholder="5" value="5"/>
+                            <input type="submit" value="🚀 Отправить через Celery">
                         </form>
-                        {% if get_sync_result %}
-                            <div>
-                                Найдено {{ get_sync_result.title }}
+                        {% if celery_task_id %}
+                            <div class="result">
+                                ✅ Задача #{{ celery_task_id }} отправлена в Celery<br>
+                                Celery ID: {{ celery_id }}
                             </div>
                         {% endif %}
                     </div>
-
-                    <div>
-                        <h4>Синхронное с долгим ответом</h4>
-                        <form method="GET" action="{{ url('get_sync_long_data') }}">
-                            Получить запись по ID: <input type="number" name="data_id" />
-                            <input type="submit" value="Получить">
-                        </form>
-                        {% if get_sync_long_data %}
-                            <div>
-                                Найдено {{ get_sync_long_data.title }}
-                            </div>
-                        {% endif %}
-                    </div>
-
-                    <div>
-                        <h4>Асинхронное</h4>
+                    
+                    <div class="method-section rmq-method">
+                        <h3>📨 RabbitMQ (Напрямую)</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Прямая работа с RabbitMQ через Pika</p>
                         <form method="POST" action="{{ url('send_rmq_direct') }}">
-                            Время выполнения (сек): <input type="number" name="processing_timeout" placeholder="1"/>
-                            <br>
-                            Routing key: <input type="text" name="routing_key" value="direct_out"/>
-                            <br>
-                            <input type="submit" value="Отправить">
+                            <label>Время выполнения (секунд):</label>
+                            <input type="number" name="processing_timeout" placeholder="5" value="5"/>
+                            <label>Routing key:</label>
+                            <input type="text" name="routing_key" value="direct_out"/>
+                            <input type="submit" value="📤 Отправить через RabbitMQ">
                         </form>
                         {% if rmq_direct_id %}
-                            <div>
-                                Задача {{ rmq_direct_id }} отправлена на выполнение
+                            <div class="result">
+                                ✅ Задача #{{ rmq_direct_id }} отправлена в RabbitMQ
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="method-section">
+                        <h3>📋 Синхронное получение данных</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Для сравнения: синхронный запрос</p>
+                        <form method="GET" action="{{ url('get_sync_data') }}">
+                            <label>ID записи:</label>
+                            <input type="number" name="data_id" placeholder="10"/>
+                            <input type="submit" value="Получить данные">
+                        </form>
+                        {% if get_sync_result %}
+                            <div class="result">
+                                📦 Найдено: {{ get_sync_result.title }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="method-section" style="border-left-color: #ef4444;">
+                        <h3 style="color: #ef4444;">⏱️ Синхронное с долгим ответом</h3>
+                        <p style="color: #666; margin-bottom: 10px;">Демонстрация блокирующей операции (7 секунд)</p>
+                        <form method="GET" action="{{ url('get_sync_long_data') }}">
+                            <label>ID записи:</label>
+                            <input type="number" name="data_id" placeholder="10"/>
+                            <input type="submit" value="⏳ Получить (долго)" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                        </form>
+                        {% if get_sync_long_data %}
+                            <div class="result">
+                                📦 Найдено: {{ get_sync_long_data.title }}
                             </div>
                         {% endif %}
                     </div>
                 </div>
             </div>
-
+            
             <div>
-                <h3>Данные</h3>
-                <table>
-                    <style>
-                      table, th, td {
-                        padding: 10px;
-                        border: 1px solid black;
-                        border-collapse: collapse;
-                      }
-                    </style>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Название</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for i in data %}
-                        <tr>
-                            <td>{{ i.id }}</td>
-                            <td>{{ i.title }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
+                <div class="card">
+                    <h2>📚 Данные</h2>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for i in data %}
+                            <tr>
+                                <td>{{ i.id }}</td>
+                                <td>{{ i.title }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
-
-            <div>
-                <h3>Задачи</h3>
-                <table>
-                    <style>
-                      table, th, td {
-                        padding: 10px;
-                        border: 1px solid black;
-                        border-collapse: collapse;
-                      }
-                    </style>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>routing key</th>
-                            <th>timeout</th>
-                            <th>status</th>
-                            <th>worker_id</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                    {% for i in tasks %}
-                        <tr>
-                            <td>{{ i.task_num }}</td>
-                            <td>{{ i.routing_key }}</td>
-                            <td>{{ i.timeout }}</td>
-                            <td>{{ i.task_status }}</td>
-                            <td>{{ i.worker_id }}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
         </div>
-
-
-
-    </body>
+        
+        <div class="card">
+            <h2>📊 Статус задач</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Метод</th>
+                        <th>Timeout</th>
+                        <th>Статус</th>
+                        <th>Worker ID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for i in tasks %}
+                    <tr>
+                        <td><strong>#{{ i.task_num }}</strong></td>
+                        <td>
+                            {% if i.method == 'Celery' %}
+                                <span class="badge badge-celery">Celery</span>
+                            {% else %}
+                                <span class="badge badge-rmq">RabbitMQ</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ i.timeout }}s</td>
+                        <td class="status-{{ i.task_status }}">{{ i.task_status }}</td>
+                        <td>{{ i.worker_id }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
 </html>
