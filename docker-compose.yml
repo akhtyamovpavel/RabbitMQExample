@@ -42,3 +42,16 @@ services:
     restart: always
     working_dir: /code/api
     entrypoint: celery -A celery_app worker --loglevel=info --concurrency=3
+
+  flower:
+    build: .
+    ports:
+      - 5555:5555
+    depends_on:
+      - rmq
+      - celery_worker
+    environment:
+      - RMQ_URL=amqp://student:qwerty@rmq:5672/
+    restart: always
+    working_dir: /code/api
+    entrypoint: celery -A celery_app flower --port=5555
